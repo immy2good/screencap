@@ -83,6 +83,11 @@ body {
   overflow-y: auto;
 }
 
+.app-content-editor {
+  padding: 0;
+  overflow: hidden;
+}
+
 .capture-section {
   max-width: 800px;
   margin: 0 auto;

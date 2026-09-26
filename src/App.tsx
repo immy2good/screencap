@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import './App.css';
 import type { AppSettings, CaptureResult, HistoryItem } from './types';
+import { AnnotationEditor } from './AnnotationEditor';
 
-type View = 'capture' | 'history' | 'settings';
+type View = 'capture' | 'history' | 'settings' | 'editor';
 
 function App() {
   const [view, setView] = useState<View>('capture');
@@ -25,6 +26,7 @@ function App() {
     type: 'success' | 'error';
   } | null>(null);
   const [isRegionSelecting, setIsRegionSelecting] = useState(false);
+  const [editingImagePath, setEditingImagePath] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -140,33 +142,64 @@ function App() {
     }
   };
 
+  const handleOpenEditor = (imagePath: string) => {
+    setEditingImagePath(imagePath);
+    setView('editor');
+  };
+
+  const handleSaveAnnotatedImage = async (dataUrl: string) => {
+    try {
+      const result = await invoke<CaptureResult>('save_annotated_image', {
+        dataUrl,
+        originalPath: editingImagePath,
+      });
+      
+      if (result.success) {
+        showNotification('Annotated image saved!', 'success');
+        setEditingImagePath(null);
+        setView('history');
+      } else {
+        showNotification(result.error || 'Failed to save', 'error');
+      }
+    } catch (error) {
+      showNotification(`Error saving: ${error}`, 'error');
+    }
+  };
+
+  const handleCancelEditor = () => {
+    setEditingImagePath(null);
+    setView('history');
+  };
+
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>ScreenCap</h1>
-        <nav className="app-nav">
-          <button
-            className={`nav-button ${view === 'capture' ? 'active' : ''}`}
-            onClick={() => setView('capture')}
-          >
-            <Camera size={16} /> Capture
-          </button>
-          <button
-            className={`nav-button ${view === 'history' ? 'active' : ''}`}
-            onClick={() => setView('history')}
-          >
-            <HistoryIcon size={16} /> History
-          </button>
-          <button
-            className={`nav-button ${view === 'settings' ? 'active' : ''}`}
-            onClick={() => setView('settings')}
-          >
-            <SettingsIcon size={16} /> Settings
-          </button>
-        </nav>
-      </header>
+      {view !== 'editor' && (
+        <header className="app-header">
+          <h1>ScreenCap</h1>
+          <nav className="app-nav">
+            <button
+              className={`nav-button ${view === 'capture' ? 'active' : ''}`}
+              onClick={() => setView('capture')}
+            >
+              <Camera size={16} /> Capture
+            </button>
+            <button
+              className={`nav-button ${view === 'history' ? 'active' : ''}`}
+              onClick={() => setView('history')}
+            >
+              <HistoryIcon size={16} /> History
+            </button>
+            <button
+              className={`nav-button ${view === 'settings' ? 'active' : ''}`}
+              onClick={() => setView('settings')}
+            >
+              <SettingsIcon size={16} /> Settings
+            </button>
+          </nav>
+        </header>
+      )}
 
-      <main className="app-content">
+      <main className={`app-content ${view === 'editor' ? 'app-content-editor' : ''}`}>
         {view === 'capture' && (
           <CaptureView
             isRecording={isRecording}
@@ -177,12 +210,24 @@ function App() {
             onStopRecording={handleStopRecording}
           />
         )}
-        {view === 'history' && <HistoryView onNotification={showNotification} />}
+        {view === 'history' && (
+          <HistoryView
+            onNotification={showNotification}
+            onOpenEditor={handleOpenEditor}
+          />
+        )}
         {view === 'settings' && (
           <SettingsView
             settings={settings}
             onSettingsUpdate={loadSettings}
             onNotification={showNotification}
+          />
+        )}
+        {view === 'editor' && editingImagePath && (
+          <AnnotationEditor
+            imagePath={editingImagePath}
+            onSave={handleSaveAnnotatedImage}
+            onCancel={handleCancelEditor}
           />
         )}
       </main>
@@ -319,9 +364,10 @@ function CaptureView({
 
 interface HistoryViewProps {
   onNotification: (message: string, type: 'success' | 'error') => void;
+  onOpenEditor: (imagePath: string) => void;
 }
 
-function HistoryView({ onNotification }: HistoryViewProps) {
+function HistoryView({ onNotification, onOpenEditor }: HistoryViewProps) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -395,6 +441,15 @@ function HistoryView({ onNotification }: HistoryViewProps) {
               >
                 📁
               </button>
+              {item.capture_type !== 'recording' && (
+                <button
+                  className="icon-button"
+                  onClick={() => onOpenEditor(item.path)}
+                  title="Edit with annotations"
+                >
+                  ✏️
+                </button>
+              )}
             </div>
           </div>
         ))}
