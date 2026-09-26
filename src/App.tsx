@@ -66,6 +66,9 @@ function App() {
           result.path ? `Saved: ${result.path}` : 'Screenshot captured successfully!',
           'success'
         );
+        if (settings?.open_editor_after_screenshot && result.path) {
+          handleOpenEditor(result.path);
+        }
       } else {
         showNotification(result.error || 'Capture failed', 'error');
       }
@@ -104,6 +107,9 @@ function App() {
           result.path ? `Window saved: ${result.path}` : 'Window captured successfully!',
           'success'
         );
+        if (settings?.open_editor_after_screenshot && result.path) {
+          handleOpenEditor(result.path);
+        }
       } else {
         showNotification(
           result.error || 'Window capture failed. Try Select Region instead.',
@@ -258,6 +264,9 @@ function App() {
                     : 'Region captured successfully!',
                   'success'
                 );
+                if (settings?.open_editor_after_screenshot && result.path) {
+                  handleOpenEditor(result.path);
+                }
               } else {
                 showNotification(result.error || 'Capture failed', 'error');
               }
@@ -605,6 +614,26 @@ function SettingsView({
           </label>
           <span className="form-help">
             Record audio playing on your computer (Windows limitations may apply)
+          </span>
+        </div>
+
+        <div className="form-group">
+          <label className="form-checkbox-wrapper">
+            <input
+              type="checkbox"
+              className="form-checkbox"
+              checked={localSettings.open_editor_after_screenshot}
+              onChange={(e) =>
+                setLocalSettings({
+                  ...localSettings,
+                  open_editor_after_screenshot: e.target.checked,
+                })
+              }
+            />
+            <span className="form-label">Open in Editor After Screenshot</span>
+          </label>
+          <span className="form-help">
+            Automatically open the annotation editor after taking a screenshot
           </span>
         </div>
 
