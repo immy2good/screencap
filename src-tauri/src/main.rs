@@ -7,6 +7,7 @@ use screenshots::Screen;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use base64::Engine;
 use tauri::Emitter;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -518,6 +519,38 @@ fn get_history(state: State<'_, AppState>) -> Result<Vec<HistoryItem>, String> {
     Ok(items)
 }
 
+// Command: Save annotated image
+#[tauri::command]
+fn save_annotated_image(original_path: String, image_data: String) -> Result<String, String> {
+    // image_data is a data URL like "data:image/png;base64,..."
+    let data_prefix = "data:image/png;base64,";
+    let base64_data = image_data
+        .strip_prefix(data_prefix)
+        .ok_or("Invalid image data format")?;
+    
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(base64_data)
+        .map_err(|e| e.to_string())?;
+    
+    let original = PathBuf::from(&original_path);
+    let parent = original.parent().ok_or("Invalid path")?;
+    let stem = original
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Invalid filename")?;
+    let ext = original
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("png");
+    
+    let new_filename = format!("{}_annotated.{}", stem, ext);
+    let new_path = parent.join(&new_filename);
+    
+    std::fs::write(&new_path, decoded).map_err(|e| e.to_string())?;
+    
+    Ok(new_path.to_string_lossy().to_string())
+}
+
 // Command: Open file in system file explorer
 #[tauri::command]
 fn reveal_in_explorer(path: String) -> Result<(), String> {
@@ -636,6 +669,7 @@ fn main() {
             get_settings,
             update_settings,
             get_history,
+            save_annotated_image,
             reveal_in_explorer,
         ])
         .run(tauri::generate_context!())
