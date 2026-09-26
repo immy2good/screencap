@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import {
   ArrowRight,
   Type,
@@ -64,7 +65,7 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
       setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
       setImageLoaded(true);
     };
-    img.src = `file://${imagePath}`;
+    img.src = convertFileSrc(imagePath);
   }, [imagePath]);
 
   const addToHistory = (newAnnotations: Annotation[]) => {
@@ -587,7 +588,7 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
         >
           <img
             ref={imageRef}
-            src={`file://${imagePath}`}
+            src={convertFileSrc(imagePath)}
             alt="Captured screenshot"
             className="annotation-image"
             onLoad={() => setImageLoaded(true)}
