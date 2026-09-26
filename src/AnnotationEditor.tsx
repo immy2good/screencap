@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Undo,
+  Redo,
   Save,
   X,
   ArrowRight,
@@ -9,7 +10,6 @@ import {
   Crop as CropIcon,
   Hash,
   Palette,
-  Download,
   RotateCcw,
 } from 'lucide-react';
 import type {
@@ -86,6 +86,13 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
       setAnnotations(history[historyIndex - 1]);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setAnnotations(history[historyIndex + 1]);
     }
   };
 
@@ -542,6 +549,14 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
             title="Undo"
           >
             <Undo size={20} />
+          </button>
+          <button
+            className="tool-button"
+            onClick={redo}
+            disabled={historyIndex >= history.length - 1}
+            title="Redo"
+          >
+            <Redo size={20} />
           </button>
           <button className="tool-button" onClick={clearAnnotations} title="Clear All">
             <RotateCcw size={20} />
