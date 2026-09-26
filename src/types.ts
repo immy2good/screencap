@@ -18,6 +18,7 @@ export interface AppSettings {
   video_quality: string;
   capture_microphone: boolean;
   capture_system_audio: boolean;
+  open_editor_after_screenshot: boolean;
   hotkey_fullscreen: string;
   hotkey_region: string;
   hotkey_window: string;
