@@ -5,6 +5,7 @@ import {
   Save,
   X,
   ArrowRight,
+  Minus,
   Type,
   Square,
   Crop as CropIcon,
@@ -15,6 +16,7 @@ import {
 import type {
   Annotation,
   ArrowAnnotation,
+  LineAnnotation,
   TextAnnotation,
   RectangleAnnotation,
   NumberAnnotation,
@@ -22,7 +24,7 @@ import type {
 } from './types';
 import './AnnotationEditor.css';
 
-type Tool = 'arrow' | 'text' | 'rectangle' | 'crop' | 'number' | 'select';
+type Tool = 'arrow' | 'line' | 'text' | 'rectangle' | 'crop' | 'number' | 'select';
 
 interface AnnotationEditorProps {
   imagePath: string;
@@ -159,6 +161,18 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
         strokeWidth,
       };
       setTempAnnotation(temp);
+    } else if (activeTool === 'line') {
+      const temp: LineAnnotation = {
+        id: 'temp',
+        type: 'line',
+        color,
+        startX: drawStart.x,
+        startY: drawStart.y,
+        endX: x,
+        endY: y,
+        strokeWidth,
+      };
+      setTempAnnotation(temp);
     } else if (activeTool === 'rectangle') {
       const temp: RectangleAnnotation = {
         id: 'temp',
@@ -283,6 +297,18 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
           ey - headLength * Math.sin(angle + Math.PI / 6)
         );
         ctx.stroke();
+      } else if (annotation.type === 'line') {
+        const line = annotation as LineAnnotation;
+        const sx = line.startX * scaleX;
+        const sy = line.startY * scaleY;
+        const ex = line.endX * scaleX;
+        const ey = line.endY * scaleY;
+
+        ctx.lineWidth = line.strokeWidth * Math.min(scaleX, scaleY);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
       } else if (annotation.type === 'text') {
         const text = annotation as TextAnnotation;
         const x = text.x * scaleX;
@@ -371,6 +397,23 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
               arrow.endX - headLength * Math.cos(angle + Math.PI / 6)
             },${arrow.endY - headLength * Math.sin(angle + Math.PI / 6)}`}
             fill={arrow.color}
+          />
+        </g>
+      );
+    }
+
+    if (annotation.type === 'line') {
+      const line = annotation as LineAnnotation;
+      return (
+        <g key={annotation.id} opacity={opacity}>
+          <line
+            x1={line.startX}
+            y1={line.startY}
+            x2={line.endX}
+            y2={line.endY}
+            stroke={line.color}
+            strokeWidth={line.strokeWidth}
+            strokeLinecap="round"
           />
         </g>
       );
@@ -486,6 +529,13 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
             title="Arrow"
           >
             <ArrowRight size={20} />
+          </button>
+          <button
+            className={`tool-button ${activeTool === 'line' ? 'active' : ''}`}
+            onClick={() => setActiveTool('line')}
+            title="Line"
+          >
+            <Minus size={20} />
           </button>
           <button
             className={`tool-button ${activeTool === 'text' ? 'active' : ''}`}

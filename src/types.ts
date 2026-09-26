@@ -35,7 +35,7 @@ export interface HistoryItem {
 
 export type CaptureMode = 'fullscreen' | 'region' | 'window' | 'recording';
 
-export type AnnotationType = 'arrow' | 'text' | 'rectangle' | 'number';
+export type AnnotationType = 'arrow' | 'line' | 'text' | 'rectangle' | 'number';
 
 export interface BaseAnnotation {
   id: string;
@@ -45,6 +45,15 @@ export interface BaseAnnotation {
 
 export interface ArrowAnnotation extends BaseAnnotation {
   type: 'arrow';
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  strokeWidth: number;
+}
+
+export interface LineAnnotation extends BaseAnnotation {
+  type: 'line';
   startX: number;
   startY: number;
   endX: number;
@@ -77,7 +86,7 @@ export interface NumberAnnotation extends BaseAnnotation {
   number: number;
 }
 
-export type Annotation = ArrowAnnotation | TextAnnotation | RectangleAnnotation | NumberAnnotation;
+export type Annotation = ArrowAnnotation | LineAnnotation | TextAnnotation | RectangleAnnotation | NumberAnnotation;
 
 export interface CropArea {
   x: number;
