@@ -239,9 +239,6 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
       cropRegion.height
     );
 
-    // Update image dimensions and reset annotations
-    setImageDimensions({ width: cropRegion.width, height: cropRegion.height });
-    
     // Adjust annotations to new coordinate system
     const adjustedAnnotations = annotations.map((ann) => ({
       ...ann,
@@ -255,6 +252,8 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
              ann.x < cropRegion.width && ann.y < cropRegion.height;
     });
 
+    // Update state
+    setImageDimensions({ width: cropRegion.width, height: cropRegion.height });
     addToHistory(adjustedAnnotations);
     setCropRegion(null);
     setCurrentTool('none');
@@ -262,7 +261,15 @@ export function AnnotationEditor({ imagePath, onSave, onCancel }: AnnotationEdit
     // Update the image source with the cropped canvas
     const dataUrl = canvas.toDataURL('image/png');
     if (imageRef.current) {
-      imageRef.current.src = dataUrl;
+      // Wait for the new image to load before allowing further edits
+      await new Promise<void>((resolve) => {
+        if (imageRef.current) {
+          imageRef.current.onload = () => resolve();
+          imageRef.current.src = dataUrl;
+        } else {
+          resolve();
+        }
+      });
     }
   };
 
