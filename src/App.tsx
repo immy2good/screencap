@@ -173,31 +173,33 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>ScreenCap</h1>
-        <nav className="app-nav">
-          <button
-            className={`nav-button ${view === 'capture' ? 'active' : ''}`}
-            onClick={() => setView('capture')}
-          >
-            <Camera size={16} /> Capture
-          </button>
-          <button
-            className={`nav-button ${view === 'history' ? 'active' : ''}`}
-            onClick={() => setView('history')}
-          >
-            <HistoryIcon size={16} /> History
-          </button>
-          <button
-            className={`nav-button ${view === 'settings' ? 'active' : ''}`}
-            onClick={() => setView('settings')}
-          >
-            <SettingsIcon size={16} /> Settings
-          </button>
-        </nav>
-      </header>
+      {view !== 'editor' && (
+        <header className="app-header">
+          <h1>ScreenCap</h1>
+          <nav className="app-nav">
+            <button
+              className={`nav-button ${view === 'capture' ? 'active' : ''}`}
+              onClick={() => setView('capture')}
+            >
+              <Camera size={16} /> Capture
+            </button>
+            <button
+              className={`nav-button ${view === 'history' ? 'active' : ''}`}
+              onClick={() => setView('history')}
+            >
+              <HistoryIcon size={16} /> History
+            </button>
+            <button
+              className={`nav-button ${view === 'settings' ? 'active' : ''}`}
+              onClick={() => setView('settings')}
+            >
+              <SettingsIcon size={16} /> Settings
+            </button>
+          </nav>
+        </header>
+      )}
 
-      <main className="app-content">
+      <main className={`app-content ${view === 'editor' ? 'app-content-editor' : ''}`}>
         {view === 'capture' && (
           <CaptureView
             isRecording={isRecording}
