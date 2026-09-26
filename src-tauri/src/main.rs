@@ -182,7 +182,8 @@ where
         let _ = w.hide();
     }
     // Give Windows time to composite / activate the next window
-    tokio::time::sleep(std::time::Duration::from_millis(280)).await;
+    // Increased delay for dual-monitor and high-DPI setups
+    tokio::time::sleep(std::time::Duration::from_millis(350)).await;
     let result = f();
     if let Some(ref w) = window {
         let _ = w.show();
@@ -281,20 +282,14 @@ async fn capture_region(
 #[tauri::command]
 async fn capture_window(app: AppHandle, state: State<'_, AppState>) -> Result<CaptureResult, String> {
     let settings = state.settings.lock().unwrap().clone();
-    let window = app.get_webview_window("main");
 
     // Remember our HWND so we do not capture ourselves if focus does not move.
     // Tauri returns *mut c_void; windows::HWND.0 is isize — compare via usize.
-    let our_hwnd_value: Option<usize> = window.as_ref().and_then(|w| {
+    let our_hwnd_value: Option<usize> = app.get_webview_window("main").as_ref().and_then(|w| {
         w.hwnd().ok().map(|h| h.0 as usize)
     });
 
-    if let Some(ref w) = window {
-        let _ = w.hide();
-    }
-    tokio::time::sleep(std::time::Duration::from_millis(350)).await;
-
-    let result = (|| {
+    with_main_window_hidden(&app, move || {
         #[cfg(target_os = "windows")]
         {
             use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
@@ -330,13 +325,8 @@ async fn capture_window(app: AppHandle, state: State<'_, AppState>) -> Result<Ca
             let _ = settings;
             Err("Window capture only supported on Windows".to_string())
         }
-    })();
-
-    if let Some(ref w) = window {
-        let _ = w.show();
-        let _ = w.set_focus();
-    }
-    result
+    })
+    .await
 }
 
 // Command: Start recording
