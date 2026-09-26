@@ -548,6 +548,85 @@ fn reveal_in_explorer(path: String) -> Result<(), String> {
     Ok(())
 }
 
+// Command: Save annotated image
+#[tauri::command]
+fn save_annotated_image(
+    state: State<'_, AppState>,
+    data_url: String,
+    original_path: String,
+) -> Result<CaptureResult, String> {
+    let settings = state.settings.lock().unwrap().clone();
+    
+    // Remove the data URL prefix
+    let data = data_url
+        .strip_prefix("data:image/png;base64,")
+        .ok_or("Invalid data URL format")?;
+    
+    // Decode base64
+    let image_data = base64_decode(data)
+        .map_err(|e| format!("Failed to decode base64: {}", e))?;
+    
+    // Parse the original path to get filename info
+    let original_path_buf = PathBuf::from(&original_path);
+    let original_filename = original_path_buf
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Invalid original filename")?;
+    
+    // Create new filename with "_annotated" suffix
+    let save_dir = PathBuf::from(&settings.save_directory);
+    std::fs::create_dir_all(&save_dir).map_err(|e| e.to_string())?;
+    
+    let ext = original_path_buf
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("png");
+    
+    let filename = format!("{}_annotated.{}", original_filename, ext);
+    let filepath = save_dir.join(&filename);
+    
+    // Write the image data
+    std::fs::write(&filepath, image_data)
+        .map_err(|e| format!("Failed to write image: {}", e))?;
+    
+    Ok(CaptureResult {
+        success: true,
+        path: Some(filepath.to_string_lossy().to_string()),
+        error: None,
+    })
+}
+
+// Simple base64 decoder
+fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
+    const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    
+    let mut result = Vec::new();
+    let mut buffer = 0u32;
+    let mut bits_in_buffer = 0u8;
+    
+    for byte in input.bytes() {
+        if byte == b'=' {
+            break;
+        }
+        
+        let value = BASE64_CHARS
+            .iter()
+            .position(|&c| c == byte)
+            .ok_or("Invalid base64 character")? as u32;
+        
+        buffer = (buffer << 6) | value;
+        bits_in_buffer += 6;
+        
+        if bits_in_buffer >= 8 {
+            bits_in_buffer -= 8;
+            result.push((buffer >> bits_in_buffer) as u8);
+            buffer &= (1 << bits_in_buffer) - 1;
+        }
+    }
+    
+    Ok(result)
+}
+
 // Load settings from disk
 fn load_settings() -> AppSettings {
     let config_dir = match dirs::config_dir() {
@@ -637,6 +716,7 @@ fn main() {
             update_settings,
             get_history,
             reveal_in_explorer,
+            save_annotated_image,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
