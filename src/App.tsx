@@ -84,13 +84,15 @@ function App() {
     }
   };
 
-  const exitRegionSelectUi = async () => {
+  const exitRegionSelectUi = async (showWindow = true) => {
     setIsRegionSelecting(false);
     try {
       const win = getCurrentWindow();
       await win.setFullscreen(false);
-      await win.show();
-      await win.setFocus();
+      if (showWindow) {
+        await win.show();
+        await win.setFocus();
+      }
     } catch (error) {
       console.error('Failed to restore window after region select:', error);
     }
@@ -242,8 +244,9 @@ function App() {
         <RegionSelector
           onSelect={async (x, y, width, height) => {
             try {
-              await exitRegionSelectUi();
-              // Brief pause so fullscreen exit + hide can settle before capture
+              // Exit fullscreen but keep window hidden - backend will hide/show around capture
+              await exitRegionSelectUi(false);
+              // Brief pause so fullscreen exit can settle before capture
               await new Promise((r) => setTimeout(r, 120));
               const result = await invoke<CaptureResult>('capture_region', {
                 x,
@@ -262,12 +265,12 @@ function App() {
                 showNotification(result.error || 'Capture failed', 'error');
               }
             } catch (error) {
-              await exitRegionSelectUi();
+              await exitRegionSelectUi(true);
               showNotification(`Error: ${error}`, 'error');
             }
           }}
           onCancel={() => {
-            void exitRegionSelectUi();
+            void exitRegionSelectUi(true);
           }}
         />
       )}
