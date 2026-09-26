@@ -1,0 +1,37 @@
+[package]
+name = "screencap"
+version = "0.1.0"
+description = "A robust screenshot and screen recording app"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["tray-icon", "image-png"] }
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
+tauri-plugin-shell = "2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+screenshots = "0.8"
+image = "0.24"
+global-hotkey = "0.5"
+chrono = "0.4"
+tokio = { version = "1", features = ["full"] }
+dirs = "5.0"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.52", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+] }
+
+[target.'cfg(windows)'.dependencies.scap]
+version = "0.1.0-beta.1"
+optional = true
